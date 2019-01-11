@@ -15,7 +15,7 @@ hash digests. Output consists of the following:
 10. Whirlpool
 
 Example:
-
+```
 ./fingerprint -s "The quick brown fox jumps over the lazy dog"
 
  Fingerprints for string "The quick brown fox jumps over the lazy dog"
@@ -30,3 +30,4 @@ Example:
     SHA384  ca737f1014a48f4c0b6dd43cb177b0afd9e5169367544c494011e3317dbf9a509cb1e5dc1e85a941bbee3d7f2afbc9b1
     SHA512  07e547d9586f6a73f73fbac0435ed76951218fb7d0c8d788a309d785436bbb642e93a252a954f23912547d1e8a3b5ed6e1bfd7097821233fa0538f3db854fee6
  WHIRLPOOL  b97de512e91e3828b40d2b0fdce9ceb3c4a71f9bea8d88e75c4fa854df36725fd2b52eb6544edcacd6f8beddfea403cb55ae31f03ad62a5ef54e42ee82c3fb35
+ ```
