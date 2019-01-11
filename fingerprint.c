@@ -24,9 +24,8 @@ union U_IN
 typedef union U_IN u_in;
 
 void errors(void) __attribute__ ((__noreturn__));
-void dump(u_in *, size_t, const char *hash, int FLAG) __THROW __nonnull ((3));
+void dump(u_in *, size_t, const char *hash, int FLAG) __THROW __nonnull ((1,3));
 void docrc32(u_in *, size_t, int) __THROW __nonnull ((1));
-uint32_t reflect(uint32_t);
 
 static int				INFILE;
 static unsigned char			*BLOCK = NULL, *digest = NULL;
@@ -330,22 +329,6 @@ dump(u_in *uin, size_t size, const char *hash, int FLAG)
 	  }
 	if (BLOCK != NULL) free(BLOCK);
 	exit(0xff);
-}
-
-uint32_t
-reflect(uint32_t x)
-{
-	uint32_t		t;
-	static uint32_t		top;
-	static int		i;
-
-	t &= ~t; top = (1 << 31);
-	for (i = 0; i < 32; ++i)
-	  {
-		if ((x & (1 << i)) != 0)
-			t |= (top >> i);
-	  }
-	return(t);
 }
 
 void
