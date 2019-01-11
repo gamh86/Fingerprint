@@ -339,7 +339,7 @@ docrc32(u_in *uin, size_t len, int FLAG)
 	static unsigned char	*p = NULL;
 	static size_t		l;
 	static uint32_t		crc, crc_tableau[256], polynomial = 0xedb88320, r;
-	static int		top_bit = (1 << 31), i, bit;
+	static int		i, bit;
 
 	// créer le tableau des restes
 	for (i = 0; i < 256; ++i)
@@ -368,7 +368,6 @@ docrc32(u_in *uin, size_t len, int FLAG)
 		for ( ; l > 0; --l)
 		  {
 			crc = (crc_tableau[(crc & 0xff) ^ *p++] ^ (crc >> 8));
-			//crc = ((crc << 8) ^ crc_tableau[(((crc >> 24) ^ *p++) & 0xff)]);
 		  }
 		if (start != NULL) munmap(start, len);
 	  }
