@@ -43,18 +43,24 @@ main(int argc, char *argv[])
 	  { fprintf(stderr, "fingerprint [-f/-s] <path/to/file>/<string>\n"); exit(0xff); }
 
 	INFILE = 0;
-	while ((c = getopt(argc, argv, "f:s:")) != -1)
+	while ((c = getopt(argc, argv, "f:hs:")) != -1)
 	  {
 		switch(c)
 		  {
+			case(0x68):
+	  		fprintf(stderr, "fingerprint [-f/-s] <path/to/file>/<string>\n");
+			exit(EXIT_SUCCESS);
+			break;
 			case(0x66):
-			if (access(optarg, R_OK))
-			  { fprintf(stderr, "main(): you do not have read permission for \"%s\"\n", optarg); exit(0xff); }
+			if (access(optarg, F_OK) != 0)
+			  { fprintf(stderr, "%s does not exist\n", optarg); exit(EXIT_FAILURE); }
+			if (access(optarg, R_OK) != 0)
+			  { fprintf(stderr, "you do not have permission to read %s\n", optarg); exit(EXIT_FAILURE); }
 			memset(&statb, 0, sizeof(statb));
 			if (lstat(optarg, &statb) < 0)
-			  { fprintf(stderr, "main(): lstat error (%s)\n", strerror(errno)); exit(0xff); }
+			  { fprintf(stderr, "main(): lstat error (%s)\n", strerror(errno)); exit(EXIT_FAILURE); }
 			if ((fd = open(optarg, O_RDONLY)) < 0)
-			  { fprintf(stderr, "main(): error opening file (%s)\n", strerror(errno)); exit(0xff); }
+			  { fprintf(stderr, "main(): error opening file (%s)\n", strerror(errno)); exit(EXIT_FAILURE); }
 			uin.fd = fd;
 			INFILE = 1;
 
@@ -62,39 +68,66 @@ main(int argc, char *argv[])
 			printf("\e[1;32m%10s\e[m  ", "CRC32");
 			docrc32(&uin, statb.st_size, INFILE);
 			lseek(fd, 0, SEEK_SET);
+		#ifndef OPENSSL_NO_MD2
+			printf("\e[1;32m%10s\e[m  ", "MD2");
+			dump(&uin, statb.st_size, (const char *)"md2", INFILE);
+			lseek(fd, 0, SEEK_SET);
+		#endif
+		#ifndef OPENSSL_NO_MD4
 			printf("\e[1;32m%10s\e[m  ", "MD4");
 			dump(&uin, statb.st_size, (const char *)"md4", INFILE);
 			lseek(fd, 0, SEEK_SET);
+		#endif
+		#ifndef OPENSSL_NO_MD5
 			printf("\e[1;32m%10s\e[m  ", "MD5");
 			dump(&uin, statb.st_size, (const char *)"md5", INFILE);
 			lseek(fd, 0, SEEK_SET);
+		#endif
+		#ifndef OPENSSL_NO_RIPEMD
 			printf("\e[1;32m%10s\e[m  ", "RIPEMD160");
 			dump(&uin, statb.st_size, (const char *)"ripemd160", INFILE);
+			lseek(fd, 0, SEEK_SET);
+		#endif
+		#ifndef OPENSSL_NO_SHA
+			printf("\e[1;32m%10s\e[m  ", "SHA");
+			dump(&uin, statb.st_size, (const char *)"sha", INFILE);
 			lseek(fd, 0, SEEK_SET);
 			printf("\e[1;32m%10s\e[m  ", "SHA1");
 			dump(&uin, statb.st_size, (const char *)"sha1", INFILE);
 			lseek(fd, 0, SEEK_SET);
+		#endif
+		#ifndef OPENSSL_NO_SHA256
 			printf("\e[1;32m%10s\e[m  ", "SHA224");
 			dump(&uin, statb.st_size, (const char *)"sha224", INFILE);
 			lseek(fd, 0, SEEK_SET);
 			printf("\e[1;32m%10s\e[m  ", "SHA256");
 			dump(&uin, statb.st_size, (const char *)"sha256", INFILE);
 			lseek(fd, 0, SEEK_SET);
+		#endif
+		#ifndef OPENSSL_NO_SHA512
 			printf("\e[1;32m%10s\e[m  ", "SHA384");
 			dump(&uin, statb.st_size, (const char *)"sha384", INFILE);
 			lseek(fd, 0, SEEK_SET);
 			printf("\e[1;32m%10s\e[m  ", "SHA512");
 			dump(&uin, statb.st_size, (const char *)"sha512", INFILE);
 			lseek(fd, 0, SEEK_SET);
+		#endif
+		#ifndef OPENSSL_NO_MDC2
+			printf("\e[1;32m%10s\e[m  ", "MDC2");
+			dump(&uin, statb.st_size, (const char *)"mdc2", INFILE);
+			lseek(fd, 0, SEEK_SET);
+		#endif
+		#ifndef OPENSSL_NO_WHIRLPOOL
 			printf("\e[1;32m%10s\e[m  ", "WHIRLPOOL");
 			dump(&uin, statb.st_size, (const char *)"whirlpool", INFILE);
-
-			exit(0);
+			lseek(fd, 0, SEEK_SET);
+		#endif
+			exit(EXIT_SUCCESS);
 			break;
 			case(0x73):
 			INFILE = 0;
 			len = strlen((char *)optarg);
-			uin.string = (unsigned char *)calloc(len+1, sizeof(unsigned char));
+			uin.string = calloc(len+1, sizeof(unsigned char));
 			if (!uin.string)
 			  { fprintf(stderr, "main(): failed to allocate memory for string (%s)\n", strerror(errno)); exit(0xff); }
 			strncpy((char *)uin.string, optarg, len);
@@ -102,26 +135,49 @@ main(int argc, char *argv[])
 			printf("\n Fingerprints for string \e[1;02m\e[1;31m\"%s\"\e[m\n\n", optarg);
 			printf("\e[1;32m%10s\e[m  ", "CRC32");
 			docrc32(&uin, len, INFILE);
+		#ifndef OPENSSL_NO_MD2
+			printf("\e[1;32m%10s\e[m  ", "MD2");
+			dump(&uin, statb.st_size, (const char *)"md2", INFILE);
+		#endif
+		#ifndef OPENSSL_NO_MD4
 			printf("\e[1;32m%10s\e[m  ", "MD4");
-			dump(&uin, len, (const char *)"md4", INFILE);
+			dump(&uin, statb.st_size, (const char *)"md4", INFILE);
+		#endif
+		#ifndef OPENSSL_NO_MD5
 			printf("\e[1;32m%10s\e[m  ", "MD5");
-			dump(&uin, len, (const char *)"md5", INFILE);
+			dump(&uin, statb.st_size, (const char *)"md5", INFILE);
+		#endif
+		#ifndef OPENSSL_NO_RIPEMD
 			printf("\e[1;32m%10s\e[m  ", "RIPEMD160");
-			dump(&uin, len, (const char *)"ripemd160", INFILE);
+			dump(&uin, statb.st_size, (const char *)"ripemd160", INFILE);
+		#endif
+		#ifndef OPENSSL_NO_SHA
+			printf("\e[1;32m%10s\e[m  ", "SHA");
+			dump(&uin, statb.st_size, (const char *)"sha", INFILE);
 			printf("\e[1;32m%10s\e[m  ", "SHA1");
-			dump(&uin, len, (const char *)"sha1", INFILE);
+			dump(&uin, statb.st_size, (const char *)"sha1", INFILE);
+		#endif
+		#ifndef OPENSSL_NO_SHA256
 			printf("\e[1;32m%10s\e[m  ", "SHA224");
-			dump(&uin, len, (const char *)"sha224", INFILE);
+			dump(&uin, statb.st_size, (const char *)"sha224", INFILE);
 			printf("\e[1;32m%10s\e[m  ", "SHA256");
-			dump(&uin, len, (const char *)"sha256", INFILE);
+			dump(&uin, statb.st_size, (const char *)"sha256", INFILE);
+		#endif
+		#ifndef OPENSSL_NO_SHA512
 			printf("\e[1;32m%10s\e[m  ", "SHA384");
-			dump(&uin, len, (const char *)"sha384", INFILE);
+			dump(&uin, statb.st_size, (const char *)"sha384", INFILE);
 			printf("\e[1;32m%10s\e[m  ", "SHA512");
-			dump(&uin, len, (const char *)"sha512", INFILE);
+			dump(&uin, statb.st_size, (const char *)"sha512", INFILE);
+		#endif
+		#ifndef OPENSSL_NO_MDC2
+			printf("\e[1;32m%10s\e[m  ", "MDC2");
+			dump(&uin, statb.st_size, (const char *)"mdc2", INFILE);
+		#endif
+		#ifndef OPENSSL_NO_WHIRLPOOL
 			printf("\e[1;32m%10s\e[m  ", "WHIRLPOOL");
-			dump(&uin, len, (const char *)"whirlpool", INFILE);
-
-			exit(0);
+			dump(&uin, statb.st_size, (const char *)"whirlpool", INFILE);
+		#endif
+			exit(EXIT_SUCCESS);
 		  }
 	  }
 }
@@ -140,8 +196,6 @@ dump(u_in *uin, size_t size, const char *hash, int FLAG)
 {
 	static size_t		nbytes, position;
 	EVP_MD_CTX		*ctx = NULL;
-	RIPEMD160_CTX		rctx;
-	WHIRLPOOL_CTX		wctx;
 	static int		digest_len, i;
 
 	if (FLAG)
@@ -157,123 +211,110 @@ dump(u_in *uin, size_t size, const char *hash, int FLAG)
 		errors();
 
 	// DETERMINE THE TYPE OF HASH DIGEST WE HAVE TO CARRY OUT
+#ifndef OPENSSL_NO_MD2
+	if (strncmp("md2", hash, 3) == 0)
+	  {
+		if (1 != EVP_DigestInit_ex(ctx, EVP_md2(), NULL))
+			errors();
+		if ((digest = OPENSSL_malloc(EVP_MD_size(EVP_md2()))) == NULL)
+			errors();
+	  }
+#endif
+#ifndef OPENSSL_NO_MD4
 	if (strncmp("md4", hash, 3) == 0)
 	  {
 		if (1 != EVP_DigestInit_ex(ctx, EVP_md4(), NULL))
 			errors();
-		if ((digest = (unsigned char *)OPENSSL_malloc(EVP_MD_size(EVP_md4()))) == NULL)
+		if ((digest = OPENSSL_malloc(EVP_MD_size(EVP_md4()))) == NULL)
 			errors();
 	  }
-	else if (strncmp("md5", hash, 3) == 0)
+#endif
+#ifndef OPENSSL_NO_MD5
+	if (strncmp("md5", hash, 3) == 0)
 	  {
 		if (1 != EVP_DigestInit_ex(ctx, EVP_md5(), NULL))
 			errors();
-		if ((digest = (unsigned char *)OPENSSL_malloc(EVP_MD_size(EVP_md5()))) == NULL)
+		if ((digest = OPENSSL_malloc(EVP_MD_size(EVP_md5()))) == NULL)
 			errors();
 	  }
-	else if (strncmp("sha1", hash, 4) == 0)
+#endif
+#ifndef OPENSSL_NO_SHA
+	if (strncmp("sha", hash, 3) == 0 && strncmp("sha1", hash, 4) != 0)
+	  {
+		if (1 != EVP_DigestInit_ex(ctx, EVP_sha(), NULL))
+			errors();
+		if ((digest = OPENSSL_malloc(EVP_MD_size(EVP_sha()))) == NULL)
+			errors();
+	  }
+	if (strncmp("sha1", hash, 4) == 0)
 	  {
 		if (1 != EVP_DigestInit_ex(ctx, EVP_sha1(), NULL))
 			errors();
-		if ((digest = (unsigned char *)OPENSSL_malloc(EVP_MD_size(EVP_sha1()))) == NULL)
+		if ((digest = OPENSSL_malloc(EVP_MD_size(EVP_sha1()))) == NULL)
 			errors();
 	  }
-	else if (strncmp("sha224", hash, 6) == 0)
+#endif
+#ifndef OPENSSL_NO_SHA256
+	if (strncmp("sha224", hash, 6) == 0)
 	  {
 		if (1 != EVP_DigestInit_ex(ctx, EVP_sha224(), NULL))
 			errors();
 		if ((digest = (unsigned char *)OPENSSL_malloc(EVP_MD_size(EVP_sha224()))) == NULL)
 			errors();
 	  }
-	else if (strncmp("sha256", hash, 6) == 0)
+	if (strncmp("sha256", hash, 6) == 0)
 	  {
 		if (1 != EVP_DigestInit_ex(ctx, EVP_sha256(), NULL))
 			errors();
-		if ((digest = (unsigned char *)OPENSSL_malloc(EVP_MD_size(EVP_sha256()))) == NULL)
+		if ((digest = OPENSSL_malloc(EVP_MD_size(EVP_sha256()))) == NULL)
 			errors();
 	  }
-	else if (strncmp("sha384", hash, 6) == 0)
+#endif
+#ifndef OPENSSL_NO_SHA512
+	if (strncmp("sha384", hash, 6) == 0)
 	  {
 		if (1 != EVP_DigestInit_ex(ctx, EVP_sha384(), NULL))
 			errors();
-		if ((digest = (unsigned char *)OPENSSL_malloc(EVP_MD_size(EVP_sha384()))) == NULL)
+		if ((digest = OPENSSL_malloc(EVP_MD_size(EVP_sha384()))) == NULL)
 			errors();
 	  }
-	else if (strncmp("ripemd160", hash, 9) == 0)
+#endif
+#ifndef OPENSSL_NO_MDC2
+	if (strncmp("mdc2", hash, 4) == 0)
 	  {
-		if (RIPEMD160_Init(&rctx) < 0)
+		if (1 != EVP_DigestInit_ex(ctx, EVP_mdc2(), NULL))
 			errors();
-		if ((digest = (unsigned char *)calloc(RIPEMD160_DIGEST_LENGTH, sizeof(unsigned char))) == NULL)
-		  { fprintf(stderr, "dump(): error allocating memory for digest (%s)\n", strerror(errno)); exit(0xff);}
-		if (FLAG)
-		  {
-			nbytes &= ~nbytes;
-			for (;;)
-			  {
-				if ((nbytes = read(uin->fd, BLOCK, RIPEMD160_DIGEST_LENGTH)) < 0)
-				  { fprintf(stderr, "dump(): read error (%s)\n", strerror(errno)); exit(0xff); }
-				if (nbytes == 0)
-					break;
-				if (RIPEMD160_Update(&rctx, BLOCK, nbytes) < 0)
-					errors();
-			  }
-			if (RIPEMD160_Final(digest, &rctx) < 0)
-				errors();
-		  }
-		else
-		  {
-			if (RIPEMD160_Update(&rctx, uin->string, strlen((char *)uin->string)) < 0)
-			  { fprintf(stderr, "dump(): RIPEMD160_Update: %s\n", strerror(errno)); goto __err; }
-			if (RIPEMD160_Final(digest, &rctx) < 0)
-			  { fprintf(stderr, "dump(): RIPEMD160_Final: %s\n", strerror(errno)); goto __err; }
-		  }
-		for (i = 0; i < strlen((char *)digest); ++i)
-			printf("%02hhx", digest[i]);
-		putchar(0x0a);
-
-		goto __end;
+		if ((digest = OPENSSL_malloc(EVP_MD_size(EVP_mdc2()))) == NULL)
+			errors();
 	  }
-	else if (strncmp("whirlpool", hash, 9) == 0)
+#endif
+#ifndef OPENSSL_NO_RIPEMD
+	if (strncmp("ripemd160", hash, 9) == 0)
 	  {
-		if (WHIRLPOOL_Init(&wctx) < 0)
+		if (1 != EVP_DigestInit_ex(ctx, EVP_ripemd160(), NULL))
 			errors();
-		if ((digest = (unsigned char *)calloc(WHIRLPOOL_DIGEST_LENGTH, sizeof(unsigned char))) == NULL)
-		  { fprintf(stderr, "dump(): error allocating memory for digest (%s)\n", strerror(errno)); exit(0xff); }
-		if (FLAG)
-		  {
-			nbytes &= ~nbytes;
-			for (;;)
-			  {
-				if ((nbytes = read(uin->fd, BLOCK, WHIRLPOOL_DIGEST_LENGTH)) < 0)
-				  { fprintf(stderr, "dump(): read error (%s)\n", strerror(errno)); exit(0xff); }
-				if (nbytes == 0)
-					break;
-				if (WHIRLPOOL_Update(&wctx, BLOCK, nbytes) < 0)
-					errors();
-			  }
-			if (WHIRLPOOL_Final(digest, &wctx) < 0)
-				errors();
-		  }
-		else
-		  {
-			if (WHIRLPOOL_Update(&wctx, uin->string, strlen((char *)uin->string)) < 0)
-				errors();
-			if (WHIRLPOOL_Final(digest, &wctx) < 0)
-				errors();
-		  }
-		for (i = 0; i < strlen((char *)digest); ++i)
-			printf("%02hhx", digest[i]);
-		putchar(0x0a);
-
-		goto __end;
+		if ((digest = OPENSSL_malloc(EVP_MD_size(EVP_ripemd160()))) == NULL)
+			errors();
 	  }
-	else
+#endif
+#ifndef OPENSSL_NO_WHIRLPOOL
+	if (strncmp("whirlpool", hash, 9) == 0)
+	  {
+		if (1 != EVP_DigestInit_ex(ctx, EVP_whirlpool(), NULL))
+			errors();
+		if ((digest = OPENSSL_malloc(EVP_MD_size(EVP_whirlpool()))) == NULL)
+			errors();
+	  }
+#endif
+#ifndef OPENSSL_NO_SHA512
+	if (strncmp("sha512", hash, 6) == 0)
 	  {
 		if (1 != EVP_DigestInit_ex(ctx, EVP_sha512(), NULL))
 			errors();
 		if ((digest = (unsigned char *)OPENSSL_malloc(EVP_MD_size(EVP_sha512()))) == NULL)
 			errors();
 	  }
+#endif
 
 	// CARRY OUT HASH DIGEST ON EITHER THE FILE OR THE STRING PROVIDED
 	if (FLAG)
@@ -296,23 +337,15 @@ dump(u_in *uin, size_t size, const char *hash, int FLAG)
 			errors();
 	  }
 
-		if (1 != EVP_DigestFinal_ex(ctx, digest, &digest_len))
-			errors();
-		for (i = 0; i < digest_len; ++i)
-			printf("%02hhx", digest[i]);
-		putchar('\n');
+	if (1 != EVP_DigestFinal_ex(ctx, digest, &digest_len))
+		errors();
+	for (i = 0; i < digest_len; ++i)
+		printf("%02hhx", digest[i]);
+	putchar('\n');
 
 	__end:
 	if (ctx != NULL) EVP_MD_CTX_destroy(ctx);
-	if (strncmp("ripemd160", hash, 9) == 0 ||
-	    strncmp("whirlpool", hash, 9) == 0)
-	  {
-		if (digest != NULL) free(digest);
-	  }
-	else
-	  {
-		if (digest != NULL) OPENSSL_free(digest);
-	  }
+	if (digest != NULL) OPENSSL_free(digest);
 	if (BLOCK != NULL) free(BLOCK);
 	return;
 
